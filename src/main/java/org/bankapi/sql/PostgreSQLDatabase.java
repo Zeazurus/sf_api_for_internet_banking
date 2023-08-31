@@ -26,9 +26,12 @@ public class PostgreSQLDatabase {
         try (Connection conn = DriverManager.getConnection(url, user, password);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getDouble("balance");
+                    double result = rs.getDouble("balance");
+                    markOperation(userId, result, 1);
+                    return result;
                 } else {
                     throw new SQLException("User not found");
                 }
@@ -42,9 +45,15 @@ public class PostgreSQLDatabase {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setDouble(1, amount);
             pstmt.setInt(2, userId);
+
+            conn.setAutoCommit(false);
             int rowsUpdated = pstmt.executeUpdate();
+
             if (rowsUpdated == 0) {
                 throw new SQLException("User not found");
+            } else {
+                markOperation(userId, amount, 2);
+                conn.commit();
             }
         }
     }
@@ -55,9 +64,35 @@ public class PostgreSQLDatabase {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setDouble(1, amount);
             pstmt.setInt(2, userId);
+
+            conn.setAutoCommit(false);
             int rowsUpdated = pstmt.executeUpdate();
+
             if (rowsUpdated == 0) {
                 throw new SQLException("User not found");
+            } else {
+                markOperation(userId, amount, 3);
+                conn.commit();
+            }
+        }
+    }
+
+    private void markOperation(int userId, double amount, int type) throws SQLException {
+        String sql = "INSERT INTO operation_list (user_id, operation_type_id, amount) VALUES (?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setInt(2, type);
+            pstmt.setDouble(3, amount);
+
+
+            conn.setAutoCommit(false);
+            int rowsUpdated = pstmt.executeUpdate();
+
+            if (rowsUpdated == 0) {
+                throw new SQLException("No update!");
+            } else {
+                conn.commit();
             }
         }
     }

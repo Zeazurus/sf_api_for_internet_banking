@@ -3,7 +3,7 @@ package org.bankapi.spring;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bankapi.sql.PostgreSQLDatabase;
-import org.bankapi.utility.ResponseJSON;
+import org.bankapi.utils.ResponseJSON;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
