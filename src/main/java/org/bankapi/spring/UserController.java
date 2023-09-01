@@ -35,6 +35,7 @@ public class UserController {
     public String putMoney(@PathVariable int userId, @RequestParam double amount) throws JsonProcessingException {
         try {
             db.putMoney(userId, amount);
+            db.markOperation(userId, 2, amount);
             return objectMapper.writeValueAsString(new ResponseJSON(1, null));
         } catch (SQLException e) {
             return objectMapper.writeValueAsString(new ResponseJSON(0, e.getMessage()));
@@ -46,6 +47,7 @@ public class UserController {
         try {
             if (db.checkBalance(userId, amount)) {
                 db.takeMoney(userId, amount);
+                db.markOperation(userId, 1, amount);
                 return objectMapper.writeValueAsString(new ResponseJSON(1, null));
             } else {
                 return objectMapper.writeValueAsString(new ResponseJSON(0, "Insufficient balance."));
@@ -90,15 +92,22 @@ public class UserController {
                                                 @RequestParam int toUserId,
                                                 @RequestParam double amount) throws JsonProcessingException {
         try {
-            var response = takeMoney(fromUserId, amount);
-            if (!response.contains("Insufficient balance.")) {
-                putMoney(toUserId, amount);
-                return objectMapper.writeValueAsString(new ResponseJSON(0, null));
+            if (db.checkBalance(fromUserId, amount)) {
+
+                db.takeMoney(fromUserId, amount);
+                db.putMoney(toUserId, amount);
+
+                db.markOperation(fromUserId, 3, amount);
+                db.markOperation(toUserId, 4, amount);
+
+                return objectMapper.writeValueAsString(new ResponseJSON(1, null));
             } else {
-                return objectMapper.writeValueAsString(new ResponseJSON(-1, "Insufficient balance."));
+                return objectMapper.writeValueAsString(new ResponseJSON(0, "Insufficient balance."));
             }
         } catch (JsonProcessingException e) {
-            return objectMapper.writeValueAsString(new ResponseJSON(-1, e.getMessage()));
+            return objectMapper.writeValueAsString(new ResponseJSON(0, e.getMessage()));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

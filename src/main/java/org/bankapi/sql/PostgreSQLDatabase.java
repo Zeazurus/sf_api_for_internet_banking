@@ -23,8 +23,7 @@ public class PostgreSQLDatabase {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    double result = rs.getDouble("balance");
-                    return result;
+                    return rs.getDouble("balance");
                 } else {
                     throw new SQLException("User not found");
                 }
@@ -44,8 +43,6 @@ public class PostgreSQLDatabase {
             if (rowsUpdated == 0) {
                 conn.rollback();
                 throw new SQLException("User not found");
-            } else {
-                conn.commit();
             }
         }
     }
@@ -62,8 +59,6 @@ public class PostgreSQLDatabase {
             if (rowsUpdated == 0) {
                 conn.rollback();
                 throw new SQLException("User not found");
-            } else {
-                conn.commit();
             }
         }
     }
@@ -77,7 +72,7 @@ public class PostgreSQLDatabase {
             pstmt.setInt(1, userId);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                ArrayList<OperationEntity> operations = new ArrayList<OperationEntity>();
+                ArrayList<OperationEntity> operations = new ArrayList<>();
                 while (rs.next())
                 {
                     operations.add(new OperationEntity(rs.getString("date"), rs.getInt("operation_type_id"), rs.getDouble("amount")));
@@ -98,7 +93,7 @@ public class PostgreSQLDatabase {
             pstmt.setTimestamp(3, endDate);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                ArrayList<OperationEntity> operations = new ArrayList<OperationEntity>();
+                ArrayList<OperationEntity> operations = new ArrayList<>();
                 while (rs.next())
                 {
                     operations.add(new OperationEntity(rs.getString("date"), rs.getInt("operation_type_id"), rs.getDouble("amount")));
@@ -108,7 +103,7 @@ public class PostgreSQLDatabase {
         }
     }
 
-    private void markOperation(int userId, double amount, int type) throws SQLException {
+    public void markOperation(int userId, int type, double amount) throws SQLException {
         String sql = "INSERT INTO operation_list (user_id, operation_type_id, amount) VALUES (?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
