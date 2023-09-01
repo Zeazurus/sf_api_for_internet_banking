@@ -1,5 +1,7 @@
 package org.bankapi.sql;
 
+import org.bankapi.utils.ResponseJSON;
+
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -115,9 +117,21 @@ public class PostgreSQLDatabase {
             if (rowsUpdated == 0) {
                 conn.rollback();
                 throw new SQLException("No update!");
-            } else {
-                conn.commit();
             }
         }
+    }
+
+    public boolean transferMoney(int fromUserId, int toUserId, double amount) throws SQLException {
+        if (checkBalance(fromUserId, amount)) {
+            takeMoney(fromUserId, amount);
+            putMoney(toUserId, amount);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void transact() {
+        conn.commit();
     }
 }

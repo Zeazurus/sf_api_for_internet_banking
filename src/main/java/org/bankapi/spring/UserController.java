@@ -36,6 +36,8 @@ public class UserController {
         try {
             db.putMoney(userId, amount);
             db.markOperation(userId, 2, amount);
+            db.transact();
+
             return objectMapper.writeValueAsString(new ResponseJSON(1, null));
         } catch (SQLException e) {
             return objectMapper.writeValueAsString(new ResponseJSON(0, e.getMessage()));
@@ -48,6 +50,8 @@ public class UserController {
             if (db.checkBalance(userId, amount)) {
                 db.takeMoney(userId, amount);
                 db.markOperation(userId, 1, amount);
+                db.transact();
+
                 return objectMapper.writeValueAsString(new ResponseJSON(1, null));
             } else {
                 return objectMapper.writeValueAsString(new ResponseJSON(0, "Insufficient balance."));
@@ -77,7 +81,6 @@ public class UserController {
             } else {
                 return objectMapper.writeValueAsString(db.getOperationListWithoutDate(userId));
             }
-
         } catch (JsonProcessingException e) {
             return objectMapper.writeValueAsString(new ResponseJSON(-1, e.getMessage()));
         } catch (SQLException e) {
@@ -92,13 +95,10 @@ public class UserController {
                                                 @RequestParam int toUserId,
                                                 @RequestParam double amount) throws JsonProcessingException {
         try {
-            if (db.checkBalance(fromUserId, amount)) {
-
-                db.takeMoney(fromUserId, amount);
-                db.putMoney(toUserId, amount);
-
+            if (db.transferMoney(fromUserId, toUserId, amount)) {
                 db.markOperation(fromUserId, 3, amount);
                 db.markOperation(toUserId, 4, amount);
+                db.transact();
 
                 return objectMapper.writeValueAsString(new ResponseJSON(1, null));
             } else {
