@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bankapi.sql.PostgreSQLDatabase;
 import org.bankapi.utils.ResponseJSON;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 @RestController
 public class UserController {
@@ -55,11 +57,32 @@ public class UserController {
     }
 
     @GetMapping("/users/{userId}/getOperationList")
-    public ResponseEntity<Object> getOperationList(@PathVariable int userId,
+    public String getOperationList(@PathVariable int userId,
                                                    @RequestParam(required = false) String startDate,
-                                                   @RequestParam(required = false) String endDate) {
-        // TODO: implement operation list retrieval
-        return ResponseEntity.ok().build();
+                                                   @RequestParam(required = false) String endDate) throws JsonProcessingException {
+        try {
+            if (startDate != null && endDate != null)
+            {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+
+                java.util.Date parsedStartDate = dateFormat.parse(startDate);
+                java.util.Date parsedEndDate = dateFormat.parse(endDate);
+
+                Timestamp timestampStart = new Timestamp(parsedStartDate.getTime());
+                Timestamp timestampEnd = new Timestamp(parsedEndDate.getTime());
+
+                return objectMapper.writeValueAsString(db.getOperationListWithDate(userId, timestampStart, timestampEnd));
+            } else {
+                return objectMapper.writeValueAsString(db.getOperationListWithoutDate(userId));
+            }
+
+        } catch (JsonProcessingException e) {
+            return objectMapper.writeValueAsString(new ResponseJSON(-1, e.getMessage()));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @PostMapping("/users/{fromUserId}/transferMoney")

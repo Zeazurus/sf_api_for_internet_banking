@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Properties;
 
 @SpringBootApplication
@@ -16,7 +17,7 @@ public class Application {
     }
 
     @Bean
-    public PostgreSQLDatabase db() throws IOException {
+    public PostgreSQLDatabase db() throws IOException, SQLException {
         // Загружаем параметры из файла config.properties
         Properties props = new Properties();
         FileInputStream in = new FileInputStream("src/main/resources/config.properties");

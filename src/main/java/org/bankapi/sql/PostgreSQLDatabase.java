@@ -1,20 +1,14 @@
 package org.bankapi.sql;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
 
 public class PostgreSQLDatabase {
-    private final String url;
-    private final String user;
-    private final String password;
+    private Connection conn;
 
-    public PostgreSQLDatabase(String url, String user, String password) {
-        this.url = url;
-        this.user = user;
-        this.password = password;
+    public PostgreSQLDatabase(String url, String user, String password) throws SQLException {
+        this.conn = DriverManager.getConnection(url, user, password);
+        this.conn.setAutoCommit(false);
     }
 
     public boolean checkBalance(int userId, double amount) throws SQLException {
@@ -23,14 +17,13 @@ public class PostgreSQLDatabase {
 
     public double getBalance(int userId) throws SQLException {
         String sql = "SELECT balance FROM users WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     double result = rs.getDouble("balance");
-                    markOperation(userId, result, 1);
                     return result;
                 } else {
                     throw new SQLException("User not found");
@@ -41,18 +34,17 @@ public class PostgreSQLDatabase {
 
     public void putMoney(int userId, double amount) throws SQLException {
         String sql = "UPDATE users SET balance = balance + ? WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setDouble(1, amount);
             pstmt.setInt(2, userId);
 
-            conn.setAutoCommit(false);
             int rowsUpdated = pstmt.executeUpdate();
 
             if (rowsUpdated == 0) {
+                conn.rollback();
                 throw new SQLException("User not found");
             } else {
-                markOperation(userId, amount, 2);
                 conn.commit();
             }
         }
@@ -60,36 +52,73 @@ public class PostgreSQLDatabase {
 
     public void takeMoney(int userId, double amount) throws SQLException {
         String sql = "UPDATE users SET balance = balance - ? WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setDouble(1, amount);
             pstmt.setInt(2, userId);
 
-            conn.setAutoCommit(false);
             int rowsUpdated = pstmt.executeUpdate();
 
             if (rowsUpdated == 0) {
+                conn.rollback();
                 throw new SQLException("User not found");
             } else {
-                markOperation(userId, amount, 3);
                 conn.commit();
+            }
+        }
+    }
+
+    public ArrayList<OperationEntity> getOperationListWithoutDate(int userId) throws SQLException {
+        System.out.println("Get operation list without date.");
+
+        String sql = "SELECT user_id, operation_type_id, amount, date FROM operation_list WHERE user_id = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                ArrayList<OperationEntity> operations = new ArrayList<OperationEntity>();
+                while (rs.next())
+                {
+                    operations.add(new OperationEntity(rs.getString("date"), rs.getInt("operation_type_id"), rs.getDouble("amount")));
+                }
+                return operations;
+            }
+        }
+    }
+
+    public ArrayList<OperationEntity> getOperationListWithDate(int userId, Timestamp startDate, Timestamp endDate) throws SQLException {
+        System.out.println("Get operation list with date.");
+
+        String sql = "SELECT user_id, operation_type_id, amount, date FROM operation_list WHERE user_id = ? AND date >= ? AND date <= ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setTimestamp(2, startDate);
+            pstmt.setTimestamp(3, endDate);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                ArrayList<OperationEntity> operations = new ArrayList<OperationEntity>();
+                while (rs.next())
+                {
+                    operations.add(new OperationEntity(rs.getString("date"), rs.getInt("operation_type_id"), rs.getDouble("amount")));
+                }
+                return operations;
             }
         }
     }
 
     private void markOperation(int userId, double amount, int type) throws SQLException {
         String sql = "INSERT INTO operation_list (user_id, operation_type_id, amount) VALUES (?, ?, ?)";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
             pstmt.setInt(2, type);
             pstmt.setDouble(3, amount);
 
-
-            conn.setAutoCommit(false);
             int rowsUpdated = pstmt.executeUpdate();
 
             if (rowsUpdated == 0) {
+                conn.rollback();
                 throw new SQLException("No update!");
             } else {
                 conn.commit();

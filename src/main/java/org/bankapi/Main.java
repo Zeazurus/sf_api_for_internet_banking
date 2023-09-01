@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, SQLException {
         // Загружаем параметры из файла config.properties
         Properties props = new Properties();
         FileInputStream in = new FileInputStream("src/main/resources/config.properties");
