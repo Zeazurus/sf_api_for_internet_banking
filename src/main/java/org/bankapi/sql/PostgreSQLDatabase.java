@@ -1,7 +1,5 @@
 package org.bankapi.sql;
 
-import org.bankapi.utils.ResponseJSON;
-
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -131,7 +129,7 @@ public class PostgreSQLDatabase {
         }
     }
 
-    public void transact() {
+    public void transact() throws SQLException {
         conn.commit();
     }
 }
