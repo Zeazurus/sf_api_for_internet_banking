@@ -63,9 +63,23 @@ public class PostgreSQLDatabase {
         }
     }
 
-    public ArrayList<OperationEntity> getOperationListWithoutDate(int userId) throws SQLException {
-        System.out.println("Get operation list without date.");
+    public void setMoney(int userId, double amount) throws SQLException {
+        String sql = "UPDATE users SET balance = ? WHERE id = ?";
 
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDouble(1, amount);
+            pstmt.setInt(2, userId);
+
+            int rowsUpdated = pstmt.executeUpdate();
+
+            if (rowsUpdated == 0) {
+                conn.rollback();
+                throw new SQLException("User not found");
+            }
+        }
+    }
+
+    public ArrayList<OperationEntity> getOperationListWithoutDate(int userId) throws SQLException {
         String sql = "SELECT user_id, operation_type_id, amount, date FROM operation_list WHERE user_id = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -83,8 +97,6 @@ public class PostgreSQLDatabase {
     }
 
     public ArrayList<OperationEntity> getOperationListWithDate(int userId, Timestamp startDate, Timestamp endDate) throws SQLException {
-        System.out.println("Get operation list with date.");
-
         String sql = "SELECT user_id, operation_type_id, amount, date FROM operation_list WHERE user_id = ? AND date >= ? AND date <= ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {

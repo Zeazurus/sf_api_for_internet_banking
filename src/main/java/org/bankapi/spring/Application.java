@@ -26,8 +26,8 @@ public class Application {
 
         // Получаем значения параметров
         String url = props.getProperty("url");
-        String user = props.getProperty("user");
-        String password = props.getProperty("password");
+        String user = props.getProperty("postgresql");
+        String password = props.getProperty("admin");
 
         return new PostgreSQLDatabase(url, user, password);
     }
