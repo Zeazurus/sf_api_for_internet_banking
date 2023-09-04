@@ -21,7 +21,7 @@
 - [X] Логирование операций
 
 Текущая схема базы данных (ERD):  
-![Иллюстрация к проекту](https://github.com/Zeazurus/API_For_Internet_Banking/blob/26ccb97c57195502a54dcfcf360341c5e7ff57e5/ERD.png)
+![Иллюстрация к проекту](ERD.png)
 
 Описание API:
 - **/users/{userId}/getBalance** - где userId = код пользователя. Вовзращает баланс пользователя по его коду.
